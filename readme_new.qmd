@@ -1,0 +1,133 @@
+---
+title: "Star Wars Character Analysis: Height and Mass"
+format: html
+---
+I wanted to look at all the Star Wars characters, so I got the .json data from this free API. I wanted to analyze all of their heights and weights to see if any specific characters tended to have similar traits. Also, if any of the "good" characters had similar traits to the other good characters, and if any of the "bad" characters had similar traits to the other bad characters. I also wanted to see if there were any outliers in the data, such as characters that were significantly taller or heavier than the others.
+
+```{python}
+import pandas as pd
+import requests
+import time
+
+characters = "https://swapi.dev/api/people/"
+all_people = []
+
+while characters:
+    r = requests.get(characters)
+    data = r.json()
+
+    if "results" not in data:
+        raise ValueError(f"SWAPI response error: {data}")
+
+    all_people.extend(data["results"])
+    characters = data["next"]
+    time.sleep(1)
+
+people_df = pd.DataFrame(all_people)
+people_df
+```
+
+
+```{python}
+people_df = people_df.loc[:, :"gender"]
+
+people_df
+```
+
+To do this I ran grabbed all the data from the .json and threw it into a pandas DataFrame. I then filtered the DataFrame to only include the columns that I was interested in analyzing, which were the name, height, mass, and gender of the characters. This allowed me to focus on the specific traits that I wanted to analyze. 
+
+
+```{python}
+people_df["height"] = pd.to_numeric(people_df["height"], errors="coerce")
+people_df["mass"] = pd.to_numeric(people_df["mass"], errors="coerce")
+```
+
+
+```{python}
+people_df.describe()
+```
+
+
+```{python}
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import pandas as pd
+people_df.boxplot(column=["height", "mass"])
+plt.title("Star Wars Characters: Height and Mass")
+plt.xlabel("Character Traits")
+plt.ylabel("Values")
+plt.show()
+```
+
+From the boxplot, we can see that there are some outliers in both height and mass. The tallest character is significantly taller than the rest, and the heaviest character is also significantly heavier than the rest. This suggests that there may be some characters in the Star Wars universe that have unique physical traits compared to the majority of characters.
+
+
+```{python}
+people_df.groupby("gender")[["height", "mass"]].mean()
+```
+
+From the groupby analysis, we can see that on average, male characters tend to be taller and heavier than female characters. This is consistent with real world trends in human height and weight. Now, let's look at the characters height and weight in a scatter plot to visualize the relationship between height and mass for each character.
+
+
+```{python}
+plt.figure(figsize=(10, 6))
+plt.scatter(people_df["height"], people_df["mass"], alpha=0.7)
+plt.title("Star Wars Characters: Height vs Mass")
+plt.xlabel("Height (cm)")
+plt.ylabel("Mass (kg)")
+plt.grid()
+plt.show()
+```
+
+This is good now I want to add the names of the characters to the scatter plot to see if there are any specific characters that stand out in terms of their height and mass.
+
+
+```{python}
+plt.figure(figsize=(10, 6))
+plt.scatter(people_df["height"], people_df["mass"], alpha=0.7)
+for i, name in enumerate(people_df["name"]):
+    plt.text(people_df["height"][i], people_df["mass"][i], name, fontsize=8)
+plt.title("Star Wars Characters: Height vs Mass with Names")
+plt.xlabel("Height (cm)")
+plt.ylabel("Mass (kg)")
+plt.grid()
+plt.show()
+```
+
+As you can see in the scatter plot a lot of the taller and heavier characters tend to be bad characters such as Darth vader and Grevious. Chewbacca is also up there in terms of height and weight, but this seems to be an outlier as he is a good character. Overall, it seems that there is a trend where the bad characters tend to be taller and heavier than the good characters, but there are some exceptions to this trend. This makes sense because a bad character is meant to be seen as intimidating and powerful, which can be conveyed through their physical traits.
+
+
+Next I wanted to look at the distribution of heights and weights based on eye color given that eye color can be a significant trait in the Star Wars universe, often associated with certain species or character types.
+```{python}
+
+people_df.boxplot(column="height", by="eye_color")
+plt.title("Height Distribution by Eye Color")
+plt.xlabel("Eye Color")
+plt.ylabel("Height (cm)")
+plt.xticks(rotation=90)
+plt.suptitle("")
+plt.tight_layout()
+plt.show()
+```
+
+
+```{python}
+import matplotlib.pyplot as plt
+
+people_df.boxplot(column="mass", by="eye_color")
+plt.title("Mass Distribution by Eye Color")
+plt.xlabel("Eye Color")
+plt.ylabel("Mass (kg)")
+plt.xticks(rotation=90)
+plt.suptitle("")
+plt.tight_layout()
+plt.show()
+```
+
+
+```{python}
+eye_color_stats = people_df.groupby("eye_color")[["height", "mass"]].mean()
+eye_color_stats
+```
+
+From the boxplots and the groupby analysis, we can see that there are some differences in height and mass based on eye color. For example, characters with blue eyes tend to be taller on average than characters with other eye colors. Additionally, characters with yellow eyes tend to be heavier on average than characters with other eye colors. This suggests that there might be a correlation between eye color and physical traits. For example the characters with yelow eyes are often either bad guys or droid characters which tend to be heavier than good characters to be an intimidating presence. On the other hand, characters with blue eyes are often good characters which tend to be taller than bad characters to be seen as heroic and powerful. Overall, it seems that eye color can be a significant trait in the Star Wars universe that is associated with certain physical traits.
